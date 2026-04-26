@@ -1,0 +1,45 @@
+{
+  "name": "asc-prices",
+  "version": "0.0.1",
+  "description": "CLI to preview and apply PPP-aligned App Store subscription prices",
+  "type": "module",
+  "bin": {
+    "asc-prices": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "app-store-connect",
+    "pricing",
+    "ppp",
+    "subscriptions",
+    "cli"
+  ],
+  "author": "WinWinKit",
+  "license": "MIT",
+  "dependencies": {
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
+    "enquirer": "^2.4.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.0",
+    "tsup": "^8.2.4",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.4"
+  }
+}
