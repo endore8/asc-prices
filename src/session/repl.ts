@@ -80,7 +80,7 @@ export async function runSession(): Promise<void> {
           if (state.authed) state = await runApps(state);
           break;
         case Action.Logout:
-          state = await runLogout();
+          state = await runLogout(state);
           break;
       }
     } catch (err) {
@@ -123,7 +123,17 @@ async function runAuth(): Promise<State> {
   return enterAuthed(creds);
 }
 
-async function runLogout(): Promise<State> {
+async function runLogout(state: State): Promise<State> {
+  const { confirmed } = await prompt<{ confirmed: boolean }>({
+    type: "confirm",
+    name: "confirmed",
+    message: "Forget cached credentials?",
+    initial: false,
+  });
+  if (!confirmed) {
+    console.log("Logout cancelled.");
+    return state;
+  }
   const removed = await clearConfig();
   if (removed) {
     console.log("Cached credentials cleared.");
