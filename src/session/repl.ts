@@ -1,210 +1,81 @@
+import Table from "cli-table3";
 import { prompt } from "../util/prompt.js";
 import {
   promptCredentials,
   hydrateCredentials,
   selectApp,
   selectProduct,
-  printAuthInstructions,
   type Credentials,
   type Product,
 } from "./prompt.js";
-import { loadConfig, saveConfig, clearConfig, configPath } from "../storage/config.js";
+import { loadConfig, saveConfig, configPath } from "../storage/config.js";
 import { TokenCache } from "../auth/session.js";
 import { AscClient } from "../api/client.js";
-import Table from "cli-table3";
-import { listApps, type App } from "../api/apps.js";
+import { listApps } from "../api/apps.js";
 import { listSubscriptions } from "../api/subscriptions.js";
 import { listInAppPurchases } from "../api/iaps.js";
 import { listSubscriptionPrices, type PriceRow } from "../api/prices.js";
 import { INDEXES } from "../indices/registry.js";
 
-interface AuthedState {
-  authed: true;
-  creds: Credentials;
-  client: AscClient;
-  app: App | null;
-  product: Product | null;
-}
-interface UnauthedState {
-  authed: false;
-}
-type State = AuthedState | UnauthedState;
-
-const Action = {
-  Auth: "auth",
-  Help: "help",
-  Apps: "apps",
-  Logout: "logout",
-  Exit: "exit",
-} as const;
-type Action = (typeof Action)[keyof typeof Action];
-
-interface Choice {
-  name: Action;
-  message: string;
-}
-
-const UNAUTHED_CHOICES: Choice[] = [
-  { name: Action.Auth, message: "auth   — enter App Store Connect API credentials" },
-  { name: Action.Help, message: "help   — how to generate an API key" },
-  { name: Action.Exit, message: "exit   — quit the session" },
-];
-
-const AUTHED_CHOICES: Choice[] = [
-  { name: Action.Apps,   message: "apps   — list and pick an app to work on" },
-  { name: Action.Logout, message: "logout — forget cached credentials" },
-  { name: Action.Exit,   message: "exit   — quit the session" },
-];
-
 export async function runSession(): Promise<void> {
-  let state: State = await bootstrap();
+  const creds = await getCredentials();
+  const client = new AscClient(new TokenCache(creds));
+
+  console.log("Fetching your apps…");
+  const apps = await listApps(client);
 
   for (;;) {
-    const choices = state.authed ? AUTHED_CHOICES : UNAUTHED_CHOICES;
-    const { action } = await prompt<{ action: Action }>({
-      type: "select",
-      name: "action",
-      message: "What next?",
-      choices,
-    });
+    const app = await selectApp(apps);
+    console.log(`\nWorking on: ${app.name} (${app.bundleId})\n`);
 
+    console.log("Fetching subscriptions and in-app purchases…");
+    const [subs, iaps] = await Promise.all([
+      listSubscriptions(client, app.id),
+      listInAppPurchases(client, app.id),
+    ]);
+
+    if (subs.length === 0 && iaps.length === 0) {
+      console.log(`No subscriptions or in-app purchases found for "${app.name}".\n`);
+      if (apps.length === 1) return;
+      continue;
+    }
+
+    const product = await selectProduct(subs, iaps);
+    console.log(`\nSelected: ${product.name} (${product.productId})\n`);
+
+    await showCurrentPrices(client, product);
+    await runProductAction(product);
+    return;
+  }
+}
+
+async function getCredentials(): Promise<Credentials> {
+  const cfg = await loadConfig();
+  if (cfg) {
     try {
-      switch (action) {
-        case Action.Exit:
-          console.log("bye.");
-          return;
-        case Action.Auth:
-          state = await runAuth();
-          break;
-        case Action.Help:
-          printAuthInstructions();
-          break;
-        case Action.Apps:
-          if (state.authed) state = await runApps(state);
-          break;
-        case Action.Logout:
-          state = await runLogout(state);
-          break;
-      }
+      const creds = await hydrateCredentials({
+        keyPath: cfg.keyPath,
+        keyId: cfg.keyId,
+        issuerId: cfg.issuerId,
+      });
+      console.log(`Using cached credentials (Key ID: ${creds.keyId}).`);
+      return creds;
     } catch (err) {
-      console.error(err instanceof Error ? err.message : err);
+      console.error(
+        `Failed to use cached credentials: ${err instanceof Error ? err.message : err}`,
+      );
+      console.log("Re-entering credentials.\n");
     }
   }
-}
 
-async function bootstrap(): Promise<State> {
-  const cfg = await loadConfig();
-  if (!cfg) {
-    console.log("No cached credentials.");
-    return { authed: false };
-  }
-
-  try {
-    const creds = await hydrateCredentials({
-      keyPath: cfg.keyPath,
-      keyId: cfg.keyId,
-      issuerId: cfg.issuerId,
-    });
-    console.log(`Using cached credentials (Key ID: ${creds.keyId}).`);
-    return enterAuthed(creds);
-  } catch (err) {
-    console.error(
-      `Failed to use cached credentials: ${err instanceof Error ? err.message : err}`,
-    );
-    return { authed: false };
-  }
-}
-
-async function runAuth(): Promise<State> {
   const creds = await promptCredentials();
   await saveConfig({
     keyPath: creds.keyPath,
     keyId: creds.keyId,
     issuerId: creds.issuerId,
   });
-  console.log(`Saved credentials to ${configPath()}`);
-  return enterAuthed(creds);
-}
-
-async function runLogout(state: State): Promise<State> {
-  const { confirmed } = await prompt<{ confirmed: boolean }>({
-    type: "confirm",
-    name: "confirmed",
-    message: "Forget cached credentials?",
-    initial: false,
-  });
-  if (!confirmed) {
-    console.log("Logout cancelled.");
-    return state;
-  }
-  const removed = await clearConfig();
-  if (removed) {
-    console.log("Cached credentials cleared.");
-  } else {
-    console.log("No cached credentials to clear.");
-  }
-  return { authed: false };
-}
-
-function enterAuthed(creds: Credentials): AuthedState {
-  return {
-    authed: true,
-    creds,
-    client: new AscClient(new TokenCache(creds)),
-    app: null,
-    product: null,
-  };
-}
-
-async function runApps(state: AuthedState): Promise<AuthedState> {
-  console.log("Fetching your apps…");
-  const apps = await listApps(state.client);
-  const app = await selectApp(apps);
-  console.log(`\nWorking on: ${app.name} (${app.bundleId})\n`);
-
-  console.log("Fetching subscriptions and in-app purchases…");
-  const [subs, iaps] = await Promise.all([
-    listSubscriptions(state.client, app.id),
-    listInAppPurchases(state.client, app.id),
-  ]);
-  const product = await selectProduct(subs, iaps);
-  console.log(`\nSelected: ${product.name} (${product.productId})\n`);
-
-  await showCurrentPrices(state.client, product);
-  await runProductMenu(product);
-
-  return { ...state, app, product };
-}
-
-async function runProductMenu(product: Product): Promise<void> {
-  const choices = [
-    ...INDEXES.map((i) => ({
-      name: `index:${i.id}`,
-      message: `${i.label}  — preview & apply PPP-aligned prices`,
-    })),
-    { name: "reset", message: "reset — restore Apple's standard prices" },
-    { name: "back",  message: "back  — pick another product" },
-  ];
-
-  for (;;) {
-    const { action } = await prompt<{ action: string }>({
-      type: "select",
-      name: "action",
-      message: `${product.name} — what next?`,
-      choices,
-    });
-
-    if (action === "back") return;
-    if (action === "reset") {
-      console.log("(reset to Apple standard prices is not yet implemented)\n");
-      continue;
-    }
-    const indexId = action.startsWith("index:") ? action.slice("index:".length) : null;
-    const idx = indexId ? INDEXES.find((i) => i.id === indexId) : null;
-    if (idx) {
-      console.log(`(${idx.label} preview is not yet implemented)\n`);
-    }
-  }
+  console.log(`Saved credentials to ${configPath()}\n`);
+  return creds;
 }
 
 async function showCurrentPrices(client: AscClient, product: Product): Promise<void> {
@@ -230,4 +101,31 @@ function printPriceTable(rows: PriceRow[]): void {
   }
   console.log(table.toString());
   console.log();
+}
+
+async function runProductAction(product: Product): Promise<void> {
+  const choices = [
+    ...INDEXES.map((i) => ({
+      name: `index:${i.id}`,
+      message: `${i.label}  — preview & apply PPP-aligned prices`,
+    })),
+    { name: "reset", message: "Apple Standard - reset to Apple's standard prices" },
+  ];
+
+  const { action } = await prompt<{ action: string }>({
+    type: "select",
+    name: "action",
+    message: `${product.name} — what next?`,
+    choices,
+  });
+
+  if (action === "reset") {
+    console.log("(reset to Apple standard prices is not yet implemented)\n");
+    return;
+  }
+  const indexId = action.startsWith("index:") ? action.slice("index:".length) : null;
+  const idx = indexId ? INDEXES.find((i) => i.id === indexId) : null;
+  if (idx) {
+    console.log(`(${idx.label} preview is not yet implemented)\n`);
+  }
 }
