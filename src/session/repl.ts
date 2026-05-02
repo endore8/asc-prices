@@ -11,9 +11,11 @@ import {
 import { loadConfig, saveConfig, clearConfig, configPath } from "../storage/config.js";
 import { TokenCache } from "../auth/session.js";
 import { AscClient } from "../api/client.js";
+import Table from "cli-table3";
 import { listApps, type App } from "../api/apps.js";
 import { listSubscriptions } from "../api/subscriptions.js";
 import { listInAppPurchases } from "../api/iaps.js";
+import { listSubscriptionPrices, type PriceRow } from "../api/prices.js";
 
 interface AuthedState {
   authed: true;
@@ -167,5 +169,32 @@ async function runApps(state: AuthedState): Promise<AuthedState> {
   const product = await selectProduct(subs, iaps);
   console.log(`\nSelected: ${product.name} (${product.productId})\n`);
 
+  await showCurrentPrices(state.client, product);
+
   return { ...state, app, product };
+}
+
+async function showCurrentPrices(client: AscClient, product: Product): Promise<void> {
+  if (product.kind !== "subscription") {
+    console.log("(In-app purchase price display is not yet implemented.)\n");
+    return;
+  }
+  console.log("Fetching current prices…");
+  const rows = await listSubscriptionPrices(client, product.id);
+  printPriceTable(rows);
+}
+
+function printPriceTable(rows: PriceRow[]): void {
+  if (rows.length === 0) {
+    console.log("No prices set for this product.\n");
+    return;
+  }
+  const table = new Table({
+    head: ["Code", "Territory", "Currency", "Customer Price", "Proceeds"],
+  });
+  for (const r of rows) {
+    table.push([r.territory, r.territoryName, r.currency, r.customerPrice, r.proceeds]);
+  }
+  console.log(table.toString());
+  console.log();
 }
