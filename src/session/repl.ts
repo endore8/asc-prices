@@ -16,6 +16,7 @@ import { listApps, type App } from "../api/apps.js";
 import { listSubscriptions } from "../api/subscriptions.js";
 import { listInAppPurchases } from "../api/iaps.js";
 import { listSubscriptionPrices, type PriceRow } from "../api/prices.js";
+import { INDEXES } from "../indices/registry.js";
 
 interface AuthedState {
   authed: true;
@@ -170,8 +171,40 @@ async function runApps(state: AuthedState): Promise<AuthedState> {
   console.log(`\nSelected: ${product.name} (${product.productId})\n`);
 
   await showCurrentPrices(state.client, product);
+  await runProductMenu(product);
 
   return { ...state, app, product };
+}
+
+async function runProductMenu(product: Product): Promise<void> {
+  const choices = [
+    ...INDEXES.map((i) => ({
+      name: `index:${i.id}`,
+      message: `${i.label}  — preview & apply PPP-aligned prices`,
+    })),
+    { name: "reset", message: "reset — restore Apple's standard prices" },
+    { name: "back",  message: "back  — pick another product" },
+  ];
+
+  for (;;) {
+    const { action } = await prompt<{ action: string }>({
+      type: "select",
+      name: "action",
+      message: `${product.name} — what next?`,
+      choices,
+    });
+
+    if (action === "back") return;
+    if (action === "reset") {
+      console.log("(reset to Apple standard prices is not yet implemented)\n");
+      continue;
+    }
+    const indexId = action.startsWith("index:") ? action.slice("index:".length) : null;
+    const idx = indexId ? INDEXES.find((i) => i.id === indexId) : null;
+    if (idx) {
+      console.log(`(${idx.label} preview is not yet implemented)\n`);
+    }
+  }
 }
 
 async function showCurrentPrices(client: AscClient, product: Product): Promise<void> {
