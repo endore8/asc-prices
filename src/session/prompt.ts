@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { prompt } from "../util/prompt.js";
 import { territoryName } from "../util/territory.js";
-import { bigMacTerritories } from "../indices/big-mac.js";
+import { allBaseTerritories } from "../indices/registry.js";
 import type { App } from "../api/apps.js";
 import type { Subscription } from "../api/subscriptions.js";
 import type { InAppPurchase, IapType } from "../api/iaps.js";
@@ -83,7 +83,7 @@ function describeProduct(p: Product): string {
 }
 
 export async function selectBaseCountry(): Promise<string> {
-  const codes = bigMacTerritories();
+  const codes = allBaseTerritories();
   const labelled = codes
     .map((code) => ({ code, label: territoryName(code) || code }))
     .sort((a, b) => a.label.localeCompare(b.label));

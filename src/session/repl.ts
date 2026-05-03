@@ -16,8 +16,9 @@ import { listApps } from "../api/apps.js";
 import { listSubscriptions } from "../api/subscriptions.js";
 import { listInAppPurchases } from "../api/iaps.js";
 import { listSubscriptionPrices, type PriceRow } from "../api/prices.js";
-import { INDEXES } from "../indices/registry.js";
-import { calculateBigMacTargets, type PriceDiff } from "../pricing/calculate.js";
+import { listSubscriptionPricePoints } from "../api/price-points.js";
+import { INDEXES, indexById, type PriceIndex } from "../indices/registry.js";
+import { calculatePppTargets, type PriceDiff } from "../pricing/calculate.js";
 
 export async function runSession(): Promise<void> {
   const { creds, baseCountry } = await getSessionContext();
@@ -46,7 +47,7 @@ export async function runSession(): Promise<void> {
     console.log(`\nSelected: ${product.name} (${product.productId})\n`);
 
     const prices = await showCurrentPrices(client, product);
-    await runProductAction(product, prices, baseCountry);
+    await runProductAction(client, product, prices, baseCountry);
     return;
   }
 }
@@ -123,6 +124,7 @@ function printPriceTable(rows: PriceRow[]): void {
 }
 
 async function runProductAction(
+  client: AscClient,
   product: Product,
   prices: PriceRow[],
   baseCountry: string,
@@ -147,55 +149,92 @@ async function runProductAction(
     return;
   }
   const indexId = action.startsWith("index:") ? action.slice("index:".length) : null;
-  const idx = indexId ? INDEXES.find((i) => i.id === indexId) : null;
-  if (!idx) return;
+  const index = indexId ? indexById(indexId) : null;
+  if (!index) return;
 
-  if (idx.id === "big-mac") {
-    await runBigMacPreview(product, prices, baseCountry);
-    return;
-  }
-  console.log(`(${idx.label} preview is not yet implemented)\n`);
+  await runIndexPreview(client, product, prices, baseCountry, index);
 }
 
-async function runBigMacPreview(
+async function runIndexPreview(
+  client: AscClient,
   product: Product,
   prices: PriceRow[],
   baseCountry: string,
+  index: PriceIndex,
 ): Promise<void> {
   if (product.kind !== "subscription") {
-    console.log("(Big Mac preview only supports subscriptions today.)\n");
+    console.log(`(${index.label} preview only supports subscriptions today.)\n`);
     return;
   }
   if (prices.length === 0) {
     console.log("No current prices to compare against.\n");
     return;
   }
+  if (!index.lookup(baseCountry)) {
+    console.log(
+      `${index.label} has no data for base country ${baseCountry}. ` +
+        "Pick a different index, or update the base country (logout and re-run).\n",
+    );
+    return;
+  }
 
-  const basePrice = prices.find((p) => p.territory === baseCountry);
-  const baseCurrency = basePrice?.currency ?? "?";
-  const initial = basePrice ? Number(basePrice.customerPrice).toFixed(2) : "";
-  const message = basePrice
-    ? `Base price ${baseCurrency} for ${baseCountry} (current price as default):`
-    : `Base price for ${baseCountry} (no current price set — enter manually):`;
+  const baseValue = await pickBasePrice(client, product.id, prices, baseCountry);
+  if (baseValue === null) return;
 
-  const { base } = await prompt<{ base: string }>({
-    type: "input",
-    name: "base",
-    message,
-    initial,
-    validate: (v: string) => {
-      const n = parseFloat(v);
-      return Number.isFinite(n) && n > 0 ? true : "enter a positive number";
-    },
-  });
-  const baseValue = parseFloat(base);
-
-  const diffs = calculateBigMacTargets(baseValue, baseCountry, prices);
+  console.log(`\nUsing ${index.label} (base ${baseCountry}):\n`);
+  const diffs = calculatePppTargets(baseValue, baseCountry, prices, index);
   printDiffTable(diffs);
   console.log(
     "Targets are calculated PPP-equivalents in local currency. They will be snapped\n" +
       "to the nearest Apple price point at apply time (apply is not yet implemented).\n",
   );
+}
+
+async function pickBasePrice(
+  client: AscClient,
+  subscriptionId: string,
+  prices: PriceRow[],
+  baseCountry: string,
+): Promise<number | null> {
+  console.log(`Fetching available price points for ${baseCountry}…`);
+  const points = await listSubscriptionPricePoints(client, subscriptionId, baseCountry);
+  if (points.length === 0) {
+    console.log(
+      `No available price points for ${baseCountry}. Pick a different base country.\n`,
+    );
+    return null;
+  }
+
+  const baseRow = prices.find((p) => p.territory === baseCountry);
+  const baseCurrency = baseRow?.currency ?? "";
+  const currentPrice = baseRow ? parseFloat(baseRow.customerPrice) : null;
+  const currentIdx =
+    currentPrice !== null
+      ? points.findIndex((p) => Math.abs(p.customerPrice - currentPrice) < 0.001)
+      : -1;
+
+  const choices = points.map((p, i) => ({
+    name: p.customerPriceRaw,
+    message: `${p.customerPriceRaw}${baseCurrency ? " " + baseCurrency : ""}${
+      i === currentIdx ? "  (current)" : ""
+    }`,
+  }));
+
+  const { picked } = await prompt<{ picked: string }>({
+    type: "autocomplete",
+    name: "picked",
+    message: `Pick base price for ${baseCountry}:`,
+    choices,
+    initial: currentIdx >= 0 ? choices[currentIdx]!.name : choices[0]!.name,
+    limit: 10,
+    suggest(input: string, list: Array<{ message: string }>) {
+      const q = input.trim();
+      if (!q) return list;
+      return list.filter((c) => c.message.includes(q));
+    },
+  });
+
+  return parseFloat(picked);
 }
 
 function printDiffTable(diffs: PriceDiff[]): void {

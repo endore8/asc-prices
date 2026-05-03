@@ -1,9 +1,6 @@
-export interface BigMacEntry {
-  currency: string;
-  localPrice: number;
-}
+import { indexFromMap, withEuro, type IndexEntry, type PriceIndex } from "./types.js";
 
-const SINGLE: Record<string, BigMacEntry> = {
+const SINGLE: Record<string, IndexEntry> = {
   USA: { currency: "USD", localPrice: 5.79 },
   ARG: { currency: "ARS", localPrice: 6200 },
   AUS: { currency: "AUD", localPrice: 7.50 },
@@ -42,21 +39,6 @@ const SINGLE: Record<string, BigMacEntry> = {
   VNM: { currency: "VND", localPrice: 80000 },
 };
 
-const EURO_AREA = [
-  "AUT", "BEL", "CYP", "DEU", "ESP", "EST", "FIN", "FRA", "GRC", "HRV",
-  "IRL", "ITA", "LTU", "LUX", "LVA", "MLT", "NLD", "PRT", "SVK", "SVN",
-];
-const EURO_PRICE = 5.20;
+const DATA = withEuro(SINGLE, 5.20);
 
-const DATA: Record<string, BigMacEntry> = { ...SINGLE };
-for (const t of EURO_AREA) {
-  DATA[t] = { currency: "EUR", localPrice: EURO_PRICE };
-}
-
-export function bigMacLookup(territoryAlpha3: string): BigMacEntry | null {
-  return DATA[territoryAlpha3] ?? null;
-}
-
-export function bigMacTerritories(): string[] {
-  return Object.keys(DATA);
-}
+export const BIG_MAC: PriceIndex = indexFromMap("big-mac", "Big Mac Index", DATA);

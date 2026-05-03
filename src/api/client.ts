@@ -5,8 +5,9 @@ const BASE_URL = "https://api.appstoreconnect.apple.com";
 export class AscClient {
   constructor(private readonly tokens: TokenCache) {}
 
-  async get<T>(pathAndQuery: string): Promise<T> {
-    const res = await fetch(`${BASE_URL}${pathAndQuery}`, {
+  async get<T>(pathOrUrl: string): Promise<T> {
+    const url = pathOrUrl.startsWith("http") ? pathOrUrl : `${BASE_URL}${pathOrUrl}`;
+    const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${this.tokens.getToken()}`,
         Accept: "application/json",
@@ -14,7 +15,7 @@ export class AscClient {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`ASC ${res.status} ${res.statusText}: ${body || pathAndQuery}`);
+      throw new Error(`ASC ${res.status} ${res.statusText}: ${body || pathOrUrl}`);
     }
     return (await res.json()) as T;
   }

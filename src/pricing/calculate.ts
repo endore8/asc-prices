@@ -1,5 +1,5 @@
 import type { PriceRow } from "../api/prices.js";
-import { bigMacLookup } from "../indices/big-mac.js";
+import type { PriceIndex } from "../indices/registry.js";
 
 export interface PriceDiff {
   territory: string;
@@ -13,25 +13,30 @@ export interface PriceDiff {
 
 const NO_MINOR_UNITS = new Set(["JPY", "KRW", "VND", "IDR", "CLP", "ISK", "HUF"]);
 
-export function calculateBigMacTargets(
+export function calculatePppTargets(
   basePrice: number,
   baseTerritory: string,
   rows: PriceRow[],
+  index: PriceIndex,
 ): PriceDiff[] {
-  const baseEntry = bigMacLookup(baseTerritory);
+  const baseEntry = index.lookup(baseTerritory);
   if (!baseEntry) {
-    throw new Error(`base country ${baseTerritory} has no Big Mac data`);
+    throw new Error(`base country ${baseTerritory} has no ${index.label} data`);
   }
 
   return rows.map((row) => {
     const current = parseLocal(row.customerPrice);
-    const entry = bigMacLookup(row.territory);
+    const entry = index.lookup(row.territory);
 
     if (!entry) {
-      return diffWithNote(row, current, "no Big Mac data");
+      return diffWithNote(row, current, `no ${index.label} data`);
     }
     if (entry.currency !== row.currency) {
-      return diffWithNote(row, current, `currency mismatch (Big Mac uses ${entry.currency})`);
+      return diffWithNote(
+        row,
+        current,
+        `currency mismatch (${index.label} uses ${entry.currency})`,
+      );
     }
 
     const raw = basePrice * (entry.localPrice / baseEntry.localPrice);
