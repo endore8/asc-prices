@@ -6,6 +6,7 @@ export interface StoredConfig {
   keyPath: string;
   keyId: string;
   issuerId: string;
+  baseCountry?: string;
   savedAt: string;
 }
 
@@ -22,6 +23,9 @@ export async function loadConfig(): Promise<StoredConfig | null> {
       typeof parsed.issuerId !== "string"
     ) {
       return null;
+    }
+    if (parsed.baseCountry !== undefined && typeof parsed.baseCountry !== "string") {
+      delete parsed.baseCountry;
     }
     return parsed;
   } catch (err) {

@@ -1,6 +1,8 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { prompt } from "../util/prompt.js";
+import { territoryName } from "../util/territory.js";
+import { bigMacTerritories } from "../indices/big-mac.js";
 import type { App } from "../api/apps.js";
 import type { Subscription } from "../api/subscriptions.js";
 import type { InAppPurchase, IapType } from "../api/iaps.js";
@@ -78,6 +80,39 @@ export async function selectProduct(
 function describeProduct(p: Product): string {
   if (p.kind === "subscription") return `[Subscription · ${p.groupName}]`;
   return `[${IAP_LABEL[p.iapType]}]`;
+}
+
+export async function selectBaseCountry(): Promise<string> {
+  const codes = bigMacTerritories();
+  const labelled = codes
+    .map((code) => ({ code, label: territoryName(code) || code }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  const choices = labelled.map(({ code, label }) => ({
+    name: code,
+    message: `${label} (${code})`,
+  }));
+
+  const { code } = await prompt<{ code: string }>({
+    type: "autocomplete",
+    name: "code",
+    message: "Pick a base country (used as the reference for PPP calculations):",
+    choices,
+    initial: "USA",
+    limit: 10,
+    suggest(input: string, list: Array<{ message: string }>) {
+      const q = input.trim().toLowerCase();
+      if (!q) return list;
+      const startsWith: typeof list = [];
+      const contains: typeof list = [];
+      for (const c of list) {
+        const m = c.message.toLowerCase();
+        if (m.startsWith(q)) startsWith.push(c);
+        else if (m.includes(q)) contains.push(c);
+      }
+      return [...startsWith, ...contains];
+    },
+  });
+  return code;
 }
 
 export async function selectApp(apps: App[]): Promise<App> {
