@@ -1,0 +1,33 @@
+[
+  {
+    "label": "Build",
+    "command": "xcede build PriceLocalizer mac",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "never",
+  },
+  {
+    "label": "Run",
+    "command": "xcede buildrun PriceLocalizer mac",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "never",
+  },
+  {
+    "label": "Generate > Build > Run",
+    "command": "xcodegen && xcede buildrun PriceLocalizer mac",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "never",
+  },
+  {
+    "label": "Generate",
+    "command": "xcodegen",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+  },
+]
