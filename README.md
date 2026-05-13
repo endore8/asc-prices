@@ -35,7 +35,7 @@ xcodebuild -project PriceLocalizer.xcodeproj -scheme PriceLocalizer build
 - **Sidebar** lists your apps.
 - **Middle column** shows the selected app's subscriptions.
 - **Detail** shows current per-territory prices in a table.
-- Pick an **Index**, a **Base country**, and a **Base price** from Apple's available price points for that country.
+- Pick an **Index** and a **Base price** (USD, from Apple's available price points for the United States).
 - Click **Preview** to see the calculated PPP-equivalent target prices alongside the current ones, with `Δ%` colored green/red.
 
 The apply step (writing prices back to App Store Connect) is not yet implemented.
@@ -67,4 +67,4 @@ Resources/              static resources (currently empty)
 
 ## Sign Out
 
-The toolbar has a sign-out button that clears the Keychain entry. The base country preference (UserDefaults) is preserved across sign-outs.
+The toolbar has a sign-out button that clears the Keychain entry.

@@ -1,5 +1,7 @@
 import SwiftUI
 
+private let BASE_COUNTRY = "USA"
+
 struct PricesDetailView: View {
     @Environment(AppSession.self) private var session
     let subscription: Subscription
@@ -25,12 +27,6 @@ struct PricesDetailView: View {
                     }
                 }
                 .frame(maxWidth: 220)
-
-                BaseCountryPicker(country: Binding(
-                    get: { session.baseCountry },
-                    set: { session.setBaseCountry($0) }
-                ))
-                .frame(maxWidth: 280)
 
                 if pricePoints.isEmpty {
                     TextField("Base price", text: $basePrice)
@@ -66,9 +62,6 @@ struct PricesDetailView: View {
         }
         .padding(20)
         .task(id: subscription.id) { await loadPrices() }
-        .onChange(of: session.baseCountry) { _, _ in
-            Task { await loadPricePoints() }
-        }
         .onChange(of: prices) { _, _ in
             Task { await loadPricePoints() }
         }
@@ -140,18 +133,17 @@ struct PricesDetailView: View {
 
     private func loadPricePoints() async {
         guard let creds = session.credentials else { return }
-        let country = session.baseCountry
         loadingPoints = true
         defer { loadingPoints = false }
         do {
             let client = AscClient(tokens: TokenCache(credentials: creds))
             let points = try await client.listSubscriptionPricePoints(
                 subscriptionId: subscription.id,
-                territory: country
+                territory: BASE_COUNTRY
             )
             await MainActor.run {
                 pricePoints = points
-                if let current = prices.first(where: { $0.territory == country })?.customerPrice,
+                if let current = prices.first(where: { $0.territory == BASE_COUNTRY })?.customerPrice,
                    points.contains(where: { $0.customerPriceRaw == current }) {
                     basePrice = current
                 } else if let first = points.first {
@@ -172,7 +164,7 @@ struct PricesDetailView: View {
         do {
             diffs = try PppCalculator.calculate(
                 basePrice: value,
-                baseTerritory: session.baseCountry,
+                baseTerritory: BASE_COUNTRY,
                 rows: prices,
                 index: index
             )
