@@ -9,7 +9,8 @@ struct MainSplitView: View {
     @State private var selectedSubscriptionId: Subscription.ID?
     @State private var loadingApps = false
     @State private var loadingSubs = false
-    @State private var error: String?
+    @State private var appsError: String?
+    @State private var subsError: String?
 
     var body: some View {
         NavigationSplitView {
@@ -38,23 +39,43 @@ struct MainSplitView: View {
             Section("Apps") {
                 if loadingApps && apps.isEmpty {
                     ProgressView().frame(maxWidth: .infinity)
-                }
-                ForEach(apps) { app in
-                    VStack(alignment: .leading) {
-                        Text(app.name)
-                            .lineLimit(1)
-                        Text(app.bundleId)
+                } else if let appsError {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Couldn't load apps")
+                            .font(.headline)
+                        Text(appsError)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                        Button("Retry") {
+                            Task { await loadApps() }
+                        }
+                        .controlSize(.small)
                     }
-                    .tag(Optional(app.id))
+                    .padding(.vertical, 4)
+                } else if apps.isEmpty {
+                    Text("No apps found on this account.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+                } else {
+                    ForEach(apps) { app in
+                        VStack(alignment: .leading) {
+                            Text(app.name)
+                                .lineLimit(1)
+                            Text(app.bundleId)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        .tag(Optional(app.id))
+                    }
                 }
             }
         }
         .onChange(of: selectedAppId) { _, newId in
             subscriptions = []
             selectedSubscriptionId = nil
+            subsError = nil
             guard let newId else { return }
             Task { await loadSubscriptions(appId: newId) }
         }
@@ -109,6 +130,7 @@ struct MainSplitView: View {
     private func loadApps() async {
         guard let creds = session.credentials else { return }
         loadingApps = true
+        appsError = nil
         defer { loadingApps = false }
         do {
             let client = AscClient(tokens: TokenCache(credentials: creds))
@@ -117,20 +139,23 @@ struct MainSplitView: View {
                 selectedAppId = apps.first?.id
             }
         } catch {
-            self.error = error.localizedDescription
+            apps = []
+            appsError = error.localizedDescription
         }
     }
 
     private func loadSubscriptions(appId: String) async {
         guard let creds = session.credentials else { return }
         loadingSubs = true
+        subsError = nil
         defer { loadingSubs = false }
         do {
             let client = AscClient(tokens: TokenCache(credentials: creds))
             subscriptions = try await client.listSubscriptions(appId: appId)
             selectedSubscriptionId = subscriptions.first?.id
         } catch {
-            self.error = error.localizedDescription
+            subscriptions = []
+            subsError = error.localizedDescription
         }
     }
 }
