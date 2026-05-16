@@ -6,7 +6,7 @@ Connect with an App Store Connect API key, pick an app and subscription, choose 
 
 ## Requirements
 
-- macOS 15+
+- macOS 26+
 - Xcode 16+ (Swift 6)
 - [xcodegen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 - App Store Connect API key with the **App Manager** role (download the `.p8` from App Store Connect → Users and Access → Integrations → App Store Connect API)
