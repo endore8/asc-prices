@@ -115,7 +115,7 @@ struct AuthPage: View {
     private let contentMaxWidth: CGFloat = 500
 
     private let setupSteps: [String] = [
-        "Login to [App Store Connect](https://appstoreconnect.apple.com)",
+        "Login to **[App Store Connect](https://appstoreconnect.apple.com)** 􀰾",
         "Navigate to **Users and Access** → **Integrations** → **Team Keys**",
         "Generate a new key with the **App Manager** role",
         "Download the .p8 file and select it in the file picker below",
@@ -171,7 +171,7 @@ private struct InstructionStepRow: View {
                 .symbolVariant(.circle)
                 .font(.title3)
                 .foregroundStyle(self.isHovered ? .primary : .secondary)
-            Text(self.text.markdownWithUnderlinedLinks())
+            Text(self.text.markdownWithUnderlinedLinks(linkColor: self.isHovered ? .primary : .secondary))
                 .foregroundStyle(self.isHovered ? .primary : .secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
