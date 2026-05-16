@@ -9,7 +9,7 @@ struct PriceLocalizerApp: App {
             RootView()
                 .frame(minWidth: 1200, minHeight: 800)
         }
-        .windowStyle(.titleBar)
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
     }
 }
