@@ -30,6 +30,9 @@ PriceLocalizer/
   Sources/
     App/                            App.swift, AppDependencies, AppConstants
     Navigation/                     RootView
+    Extensions/                     stdlib/SwiftUI extensions (String+Markdown, …)
+    Views/                          shared SwiftUI components (AuthKeyFilePicker, …)
+    ViewModifiers/                  shared SwiftUI styles & modifiers
     Pages/
       Auth/                         AuthPage (placeholder)
       Main/                         MainPage (placeholder split view)

@@ -7,7 +7,7 @@ struct PriceLocalizerApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .frame(minWidth: 1100, minHeight: 640)
+                .frame(minWidth: 1200, minHeight: 800)
         }
         .windowStyle(.titleBar)
         .windowResizability(.contentMinSize)
