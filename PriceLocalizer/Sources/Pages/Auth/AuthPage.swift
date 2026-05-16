@@ -84,19 +84,22 @@ struct AuthPage: View {
             }
 
             HStack {
-                Button("Clear", action: self.clear)
-                    .controlSize(.large)
-                    .buttonStyle(.glass)
-                    .disabled(!self.canClear)
+                ShortcutButton(
+                    title: "Clear",
+                    shortcut: .init(key: .cancelAction, hint: "esc"),
+                    action: self.clear
+                )
+                .disabled(!self.canClear)
 
                 Spacer()
 
-                Button("Save", action: self.save)
-                    .controlSize(.large)
-                    .buttonStyle(.glass)
-                    .tint(.accentColor)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!self.canSave)
+                ShortcutButton(
+                    title: "Save",
+                    shortcut: .init(key: KeyboardShortcut(.return, modifiers: .command), hint: "⌘ ⏎"),
+                    action: self.save
+                )
+                .tint(.accentColor)
+                .disabled(!self.canSave)
             }
             .padding()
             .frame(maxWidth: self.contentMaxWidth)
@@ -179,25 +182,5 @@ private struct InstructionStepRow: View {
 
     private func handleHover(_ hovering: Bool) {
         self.isHovered = hovering
-    }
-}
-
-private struct KeyHint: View {
-    let label: String
-
-    @Environment(\.isEnabled) private var isEnabled
-
-    init(_ label: String) {
-        self.label = label
-    }
-
-    var body: some View {
-        Text(self.label)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(.tertiary)
-            .opacity(self.isEnabled ? 1 : 0.4)
     }
 }
