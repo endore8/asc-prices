@@ -181,3 +181,23 @@ private struct InstructionStepRow: View {
         self.isHovered = hovering
     }
 }
+
+private struct KeyHint: View {
+    let label: String
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    init(_ label: String) {
+        self.label = label
+    }
+
+    var body: some View {
+        Text(self.label)
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.tertiary)
+            .opacity(self.isEnabled ? 1 : 0.4)
+    }
+}
