@@ -8,8 +8,13 @@ struct AppsList: View {
     var body: some View {
         Group {
             if let apps = self.apps {
-                List(apps) { app in
-                    AppRow(app: app)
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(apps) { app in
+                            AppRow(app: app)
+                        }
+                    }
+                    .padding(8)
                 }
             }
             else {

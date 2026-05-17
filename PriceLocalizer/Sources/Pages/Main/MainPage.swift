@@ -8,13 +8,13 @@ struct MainPage: View {
                 Divider()
                 SidebarFooter()
             }
-            .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
+            .navigationSplitViewColumnWidth(min: 260, ideal: 280, max: 320)
         } content: {
             List {
                 Text("Content")
                     .foregroundStyle(.secondary)
             }
-            .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 380)
+            .navigationSplitViewColumnWidth(min: 260, ideal: 280, max: 320)
         } detail: {
             Text("Detail")
                 .font(.title3)
