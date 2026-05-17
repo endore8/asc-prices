@@ -12,16 +12,10 @@ struct MainPage: View {
             }
             .navigationSplitViewColumnWidth(min: 260, ideal: 280, max: 320)
         } content: {
-            List {
-                Text(self.selectedAppID ?? "Content")
-                    .foregroundStyle(.secondary)
-            }
-            .navigationSplitViewColumnWidth(min: 260, ideal: 280, max: 320)
+            ProductsList(selectedAppID: self.selectedAppID)
+                .navigationSplitViewColumnWidth(min: 260, ideal: 280, max: 320)
         } detail: {
-            Text(self.selectedAppID ?? "Detail")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ProductPrices(selectedAppID: self.selectedAppID)
         }
     }
 }
