@@ -17,7 +17,7 @@ struct AuthKeyFilePicker: View {
                 Text(
                     self.filename.isEmpty
                         ? "Drop or select the AuthKey_XXXX.p8 file"
-                        : self.filename
+                        : self.filename,
                 )
                 .font(.callout)
                 .multilineTextAlignment(.center)
@@ -27,11 +27,11 @@ struct AuthKeyFilePicker: View {
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(self.fillColor)
+                    .fill(self.fillColor),
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(self.borderColor, style: self.strokeStyle)
+                    .strokeBorder(self.borderColor, style: self.strokeStyle),
             )
         }
         .buttonStyle(.plain)
@@ -44,7 +44,7 @@ struct AuthKeyFilePicker: View {
             isPresented: self.$importing,
             allowedContentTypes: [UTType(filenameExtension: "p8") ?? .data],
             allowsMultipleSelection: false,
-            onCompletion: self.handleFileImport
+            onCompletion: self.handleFileImport,
         )
     }
 

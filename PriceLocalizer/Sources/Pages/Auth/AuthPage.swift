@@ -30,8 +30,8 @@ struct AuthPage: View {
                         Label("How to get an Auth Key", systemImage: "list.bullet.rectangle.portrait.fill")
                             .font(.title3)
                             .padding(.bottom, 8)
-                            .padding(.horizontal)
-                    ) {
+                            .padding(.horizontal))
+                    {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(Array(self.setupSteps.enumerated()), id: \.offset) { index, step in
                                 InstructionStepRow(index: index, text: step)
@@ -44,8 +44,8 @@ struct AuthPage: View {
                         Label("Credentials", systemImage: "key.card.fill")
                             .font(.title3)
                             .padding(.bottom, 8)
-                            .padding(.horizontal)
-                    ) {
+                            .padding(.horizontal))
+                    {
                         VStack(alignment: .leading, spacing: 12) {
                             AuthKeyFilePicker(filename: self.$keyFilename, pem: self.$keyPEM)
 
@@ -89,7 +89,7 @@ struct AuthPage: View {
                 ShortcutButton(
                     title: "Clear",
                     shortcut: .init(key: .cancelAction, hint: "esc"),
-                    action: self.clear
+                    action: self.clear,
                 )
                 .disabled(!self.canClear)
 
@@ -98,7 +98,7 @@ struct AuthPage: View {
                 ShortcutButton(
                     title: "Save",
                     shortcut: .init(key: KeyboardShortcut(.return, modifiers: .command), hint: "⌘ ⏎"),
-                    action: self.save
+                    action: self.save,
                 )
                 .tint(.accentColor)
                 .disabled(!self.canSave)
@@ -162,7 +162,7 @@ struct AuthPage: View {
         let credentials = Credentials(
             keyId: self.keyId,
             issuerId: self.issuerId,
-            privateKeyPEM: self.keyPEM
+            privateKeyPEM: self.keyPEM,
         )
         self.authState.setCredentials(credentials)
     }

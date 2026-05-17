@@ -13,7 +13,8 @@ struct Keychain: KeyValueStorageType {
         nonmutating set {
             if let data = newValue.flatMap({ try? JSONEncoder().encode($0) }) {
                 self.write(data, account: key.name)
-            } else {
+            }
+            else {
                 self.delete(account: key.name)
             }
         }

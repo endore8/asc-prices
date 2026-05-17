@@ -1,7 +1,7 @@
 import AppKit
 
 extension NSTextField {
-    open override var focusRingType: NSFocusRingType {
+    override open var focusRingType: NSFocusRingType {
         get { .none }
         set {}
     }
