@@ -4,13 +4,12 @@ struct MainPage: View {
     @Environment(AuthState.self) private var authState
     @Environment(ASCClient.self) private var ascClient
 
+    @State private var apps: [ASCApp]?
+
     var body: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
-                List {
-                    Text("Sidebar")
-                        .foregroundStyle(.secondary)
-                }
+                self.sidebarList
 
                 Divider()
 
@@ -25,6 +24,7 @@ struct MainPage: View {
                 .padding()
             }
             .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
+            .task(id: ObjectIdentifier(self.ascClient)) { await self.loadApps() }
         } content: {
             List {
                 Text("Content")
@@ -39,9 +39,36 @@ struct MainPage: View {
         }
     }
 
+    @ViewBuilder
+    private var sidebarList: some View {
+        if let apps = self.apps {
+            List(apps) { app in
+                AppRow(app: app)
+            }
+        }
+        else {
+            VStack {
+                ProgressView()
+                    .controlSize(.small)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
     // MARK: - Actions
 
     private func logout() {
         self.authState.clearCredentials()
     }
+
+    private func loadApps() async {
+        do {
+            self.apps = try await self.ascClient.loadApps()
+        }
+        catch {
+            print("Failed to load apps: \(error)")
+            self.apps = []
+        }
+    }
 }
+
