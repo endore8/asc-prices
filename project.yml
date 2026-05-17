@@ -18,6 +18,11 @@ targets:
     sources:
       - path: PriceLocalizer/Sources
       - path: PriceLocalizer/Resources
+    entitlements:
+      path: PriceLocalizer/Resources/PriceLocalizer.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.endore8.price-localizer
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.endore8.price-localizer
@@ -29,7 +34,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
-        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: "Apple Development"
+        DEVELOPMENT_TEAM: "3K4R6ZGH22"
         SWIFT_STRICT_CONCURRENCY: complete
         DEAD_CODE_STRIPPING: YES
