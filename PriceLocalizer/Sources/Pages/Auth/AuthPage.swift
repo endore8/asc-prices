@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct AuthPage: View {
+    @Environment(AuthState.self) private var authState
+
     @State private var keyId: String = ""
     @State private var issuerId: String = ""
     @State private var keyFilename: String = ""
@@ -26,9 +28,9 @@ struct AuthPage: View {
 
                     GroupBox(label:
                         Label("How to get an Auth Key", systemImage: "list.bullet.rectangle.portrait.fill")
-                        .font(.title3)
-                        .padding(.bottom, 8)
-                        .padding(.horizontal)
+                            .font(.title3)
+                            .padding(.bottom, 8)
+                            .padding(.horizontal)
                     ) {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(Array(self.setupSteps.enumerated()), id: \.offset) { index, step in
@@ -40,9 +42,9 @@ struct AuthPage: View {
 
                     GroupBox(label:
                         Label("Credentials", systemImage: "key.card.fill")
-                        .font(.title3)
-                        .padding(.bottom, 8)
-                        .padding(.horizontal)
+                            .font(.title3)
+                            .padding(.bottom, 8)
+                            .padding(.horizontal)
                     ) {
                         VStack(alignment: .leading, spacing: 12) {
                             AuthKeyFilePicker(filename: self.$keyFilename, pem: self.$keyPEM)
@@ -63,8 +65,8 @@ struct AuthPage: View {
                             GroupBox {
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                                     Image(systemName: "lock.shield.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(.secondary)
+                                        .font(.title3)
+                                        .foregroundStyle(.secondary)
                                     Text("Credentials are securely stored and never leave your device.")
                                         .font(.callout)
                                         .foregroundStyle(.secondary)
@@ -156,7 +158,14 @@ struct AuthPage: View {
         self.keyPEM = ""
     }
 
-    private func save() {}
+    private func save() {
+        let credentials = Credentials(
+            keyId: self.keyId,
+            issuerId: self.issuerId,
+            privateKeyPEM: self.keyPEM
+        )
+        self.authState.setCredentials(credentials)
+    }
 }
 
 private struct InstructionStepRow: View {

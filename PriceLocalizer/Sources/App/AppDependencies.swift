@@ -1,9 +1,11 @@
 import Foundation
 
 struct AppDependencies {
-    let persistentKeyValueStorage: KeyValueStorageType
+    let authState: AuthState
 
+    @MainActor
     init() {
-        self.persistentKeyValueStorage = Keychain(service: AppConstants.keychainService)
+        let storage = Keychain(service: AppConstants.keychainService)
+        self.authState = AuthState(storage: storage)
     }
 }

@@ -1,11 +1,27 @@
 import SwiftUI
 
 struct MainPage: View {
+    @Environment(AuthState.self) private var authState
+
     var body: some View {
         NavigationSplitView {
-            List {
-                Text("Sidebar")
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                List {
+                    Text("Sidebar")
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                HStack {
+                    Button(action: self.logout) {
+                        Label("Log out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    Spacer()
+                }
+                .padding()
             }
             .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
         } content: {
@@ -20,5 +36,11 @@ struct MainPage: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    // MARK: - Actions
+
+    private func logout() {
+        self.authState.clearCredentials()
     }
 }

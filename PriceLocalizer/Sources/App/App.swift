@@ -7,6 +7,7 @@ struct PriceLocalizerApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environment(self.appDependencies.authState)
                 .frame(minWidth: 1200, minHeight: 800)
         }
         .windowStyle(.hiddenTitleBar)
