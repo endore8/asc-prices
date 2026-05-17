@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct AppsList: View {
+    @Binding var selectedAppID: String?
+
     @Environment(ASCClient.self) private var ascClient
 
     @State private var apps: [ASCApp]?
@@ -9,9 +11,9 @@ struct AppsList: View {
         Group {
             if let apps = self.apps {
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 2) {
                         ForEach(apps) { app in
-                            AppRow(app: app)
+                            AppRow(app: app, selectedAppID: self.$selectedAppID)
                         }
                     }
                     .padding(8)

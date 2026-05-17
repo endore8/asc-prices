@@ -2,38 +2,47 @@ import SwiftUI
 
 struct AppRow: View {
     let app: ASCApp
+    @Binding var selectedAppID: String?
 
     @Environment(ASCClient.self) private var ascClient
     @State private var iconURL: URL?
     @State private var isHovered: Bool = false
 
+    private var isSelected: Bool {
+        self.selectedAppID == self.app.id
+    }
+
     private let shape = RoundedRectangle(cornerRadius: 16)
 
     var body: some View {
-        HStack(spacing: 12) {
-            AsyncImage(url: self.iconURL) { image in
-                image.resizable()
-            } placeholder: {
-                Rectangle()
-                    .fill(.tertiary)
-            }
-            .frame(width: 32, height: 32)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+        Button(action: self.select) {
+            HStack(spacing: 8) {
+                AsyncImage(url: self.iconURL) { image in
+                    image.resizable()
+                } placeholder: {
+                    Rectangle()
+                        .fill(.tertiary)
+                }
+                .frame(width: 32, height: 32)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(self.app.attributes.name)
-                    .font(.headline)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text(self.app.attributes.bundleId)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(self.app.attributes.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(self.app.attributes.bundleId)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
+            .padding(8)
+            .contentShape(self.shape)
         }
-        .padding(8)
+        .buttonStyle(.plain)
         .background {
-            if self.isHovered {
+            if self.isSelected || self.isHovered {
                 Color.secondary
                     .opacity(0.1)
                     .clipShape(self.shape)
@@ -42,13 +51,22 @@ struct AppRow: View {
         }
         .overlay {
             self.shape
-                .strokeBorder(.separator, lineWidth: 1)
-                .opacity(self.isHovered ? 1 : 0)
+                .strokeBorder(
+                    self.isSelected ? AnyShapeStyle(Color.secondary) : AnyShapeStyle(.separator),
+                    lineWidth: 1,
+                )
+                .opacity(self.isSelected || self.isHovered ? 1 : 0)
         }
-        .contentShape(self.shape)
         .onHover { self.isHovered = $0 }
         .animation(.easeInOut(duration: 0.1), value: self.isHovered)
+        .animation(.easeInOut(duration: 0.1), value: self.isSelected)
         .task(id: self.app.id) { await self.loadIcon() }
+    }
+
+    // MARK: - Actions
+
+    private func select() {
+        self.selectedAppID = self.app.id
     }
 
     private func loadIcon() async {
