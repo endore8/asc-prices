@@ -6,7 +6,7 @@ import Observation
 final class AuthState {
     private let storage: KeyValueStorageType
 
-    var credentials: Credentials?
+    private(set) var credentials: Credentials?
 
     init(storage: KeyValueStorageType) {
         self.storage = storage

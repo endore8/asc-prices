@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainPage: View {
     @Environment(AuthState.self) private var authState
+    @Environment(ASCClient.self) private var ascClient
 
     var body: some View {
         NavigationSplitView {
