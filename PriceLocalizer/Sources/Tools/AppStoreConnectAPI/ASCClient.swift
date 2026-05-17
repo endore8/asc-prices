@@ -22,8 +22,8 @@ final class ASCClient: @unchecked Sendable {
     }
 
     func loadAppIconURL(appID: String, size: Int = 512) async throws -> URL? {
-        let path = "/v1/apps/\(appID)/builds"
-            + "?limit=1&sort=-uploadedDate&fields[builds]=iconAssetToken"
+        let path = "/v1/builds"
+            + "?filter[app]=\(appID)&limit=1&sort=-uploadedDate&fields[builds]=iconAssetToken"
         let response: ListResponse<ASCAppBuild> = try await self.get(path)
         return response.data.first?.attributes.iconAssetToken?.url(size: size)
     }
