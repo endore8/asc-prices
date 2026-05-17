@@ -28,10 +28,68 @@ final class ASCClient: @unchecked Sendable {
         return response.data.first?.attributes.iconAssetToken?.url(size: size)
     }
 
+    func loadInAppPurchases(appID: String) async throws -> [ASCInAppPurchase] {
+        let path = "/v1/apps/\(appID)/inAppPurchasesV2"
+            + "?limit=200&fields[inAppPurchases]=name,productId,inAppPurchaseType"
+        let response: ListResponse<ASCInAppPurchase> = try await self.get(path)
+        return response.data
+    }
+
+    func loadSubscriptionGroups(appID: String) async throws -> [ASCSubscriptionGroup] {
+        let path = "/v1/apps/\(appID)/subscriptionGroups"
+            + "?limit=200&include=subscriptions"
+            + "&fields[subscriptionGroups]=referenceName,subscriptions"
+            + "&fields[subscriptions]=name,productId"
+        let response: SubscriptionGroupsResponse = try await self.get(path)
+        let subsByID = Dictionary(
+            uniqueKeysWithValues: (response.included ?? []).map { ($0.id, ASCSubscription(id: $0.id, attributes: $0.attributes)) },
+        )
+        return response.data.map { group in
+            let subs = group.relationships.subscriptions.data.compactMap { subsByID[$0.id] }
+            return ASCSubscriptionGroup(
+                id: group.id,
+                referenceName: group.attributes.referenceName,
+                subscriptions: subs,
+            )
+        }
+    }
+
     // MARK: - Private
 
     private struct ListResponse<T: Decodable & Sendable>: Decodable, Sendable {
         let data: [T]
+    }
+
+    private struct SubscriptionGroupsResponse: Decodable, Sendable {
+        let data: [GroupResource]
+        let included: [SubscriptionResource]?
+
+        struct GroupResource: Decodable, Sendable {
+            let id: String
+            let attributes: Attributes
+            let relationships: Relationships
+
+            struct Attributes: Decodable, Sendable {
+                let referenceName: String
+            }
+
+            struct Relationships: Decodable, Sendable {
+                let subscriptions: Subscriptions
+
+                struct Subscriptions: Decodable, Sendable {
+                    let data: [Identifier]
+
+                    struct Identifier: Decodable, Sendable {
+                        let id: String
+                    }
+                }
+            }
+        }
+
+        struct SubscriptionResource: Decodable, Sendable {
+            let id: String
+            let attributes: ASCSubscription.Attributes
+        }
     }
 
     private func get<T: Decodable & Sendable>(
