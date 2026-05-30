@@ -33,6 +33,13 @@ struct ProductsList: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        else if !self.hasAnyProducts {
+            ContentUnavailableView(
+                "No Products",
+                systemImage: "shippingbox",
+                description: Text("This app has no in-app purchases or subscriptions yet."),
+            )
+        }
         else {
             List {
                 if let iaps = self.inAppPurchases, !iaps.isEmpty {
@@ -60,6 +67,12 @@ struct ProductsList: View {
                 }
             }
         }
+    }
+
+    private var hasAnyProducts: Bool {
+        let hasIAPs = !(self.inAppPurchases ?? []).isEmpty
+        let hasSubscriptions = (self.subscriptionGroups ?? []).contains { !$0.subscriptions.isEmpty }
+        return hasIAPs || hasSubscriptions
     }
 
     // MARK: - Actions
