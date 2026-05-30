@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProductsList: View {
     let selectedAppID: String?
+    @Binding var selectedProduct: ProductSelection?
 
     @Environment(ASCClient.self) private var ascClient
 
@@ -41,30 +42,35 @@ struct ProductsList: View {
             )
         }
         else {
-            List {
-                if let iaps = self.inAppPurchases, !iaps.isEmpty {
-                    Section("In-App Purchases") {
+            ScrollView {
+                VStack(spacing: 2) {
+                    if let iaps = self.inAppPurchases, !iaps.isEmpty {
+                        SectionHeader(title: "In-App Purchases")
                         ForEach(iaps) { iap in
                             ProductRow(
                                 name: iap.attributes.name,
                                 productId: iap.attributes.productId,
+                                selection: .inAppPurchase(id: iap.id),
+                                selectedProduct: self.$selectedProduct,
                             )
                         }
                     }
-                }
 
-                if let groups = self.subscriptionGroups {
-                    ForEach(groups) { group in
-                        Section("Subscriptions · \(group.referenceName)") {
+                    if let groups = self.subscriptionGroups {
+                        ForEach(groups) { group in
+                            SectionHeader(title: "Subscriptions · \(group.referenceName)")
                             ForEach(group.subscriptions) { sub in
                                 ProductRow(
                                     name: sub.attributes.name,
                                     productId: sub.attributes.productId,
+                                    selection: .subscription(id: sub.id),
+                                    selectedProduct: self.$selectedProduct,
                                 )
                             }
                         }
                     }
                 }
+                .padding(8)
             }
         }
     }
@@ -91,6 +97,7 @@ struct ProductsList: View {
             self.subscriptionGroups = groups
         }
         catch {
+            guard !Task.isCancelled else { return }
             print("Failed to load products for \(appID): \(error)")
             self.inAppPurchases = []
             self.subscriptionGroups = []
@@ -98,16 +105,18 @@ struct ProductsList: View {
     }
 }
 
-private struct ProductRow: View {
-    let name: String
-    let productId: String
+private struct SectionHeader: View {
+    let title: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(self.name)
-            Text(self.productId)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
+        Text(self.title)
+            .font(.caption)
+            .fontWeight(.semibold)
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .padding(.horizontal, 8)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
